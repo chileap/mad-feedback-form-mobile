@@ -7,8 +7,14 @@
     "test": "jest"
   },
   "dependencies": {
+    "native-base": "^2.3.5",
     "react": "16.0.0",
-    "react-native": "0.51.0"
+    "react-native": "0.51.0",
+    "react-native-easy-grid": "^0.1.15",
+    "react-native-radio-buttons": "^1.0.0",
+    "react-native-star-rating": "^1.0.8",
+    "react-native-vector-icons": "^4.4.3",
+    "react-navigation": "^1.0.0-beta.22"
   },
   "devDependencies": {
     "babel-jest": "22.0.4",
@@ -21,7 +27,7 @@
   },
   "rnpm": {
     "assets": [
-    	"./assets/fonts/",
+      "./assets/fonts/",
       "./assets/images/"
     ]
   }
