@@ -31,17 +31,16 @@ export default class Home extends Component {
         <Content>
           <View style={styles.logoContainer}>
             <Image source={require('../assets/images/logo.png')} style={styles.logoImage}/>
-            <View>
+            <View style={styles.descriptionText}>
               <Text>
                 Thank you for your feedback us!
               </Text>
               <Button
                 block
-                bordered
-                style={{borderColor: PRIMARY_COLOR}}
+                style={styles.button}
                 onPress={() => (this.props.navigation.navigate('Home'))}
               >
-                <Text>
+                <Text style={styles.buttonText}>
                   Back To Home Page
                 </Text>
               </Button>
@@ -58,6 +57,7 @@ const styles = StyleSheet.create({
     padding: 30
   },
   logoContainer: {
+    marginTop: 40,
     padding: 30,
     justifyContent: 'center',
     alignItems: 'center'
@@ -67,4 +67,17 @@ const styles = StyleSheet.create({
     height: 100,
     alignSelf: 'center'
   },
+  button: {
+    backgroundColor: PRIMARY_COLOR,
+    marginTop: 10
+  },
+  descriptionText: {
+    marginTop: 30
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontFamily: PRIMARY_FONT,
+    textAlign: 'center'
+  }
 })

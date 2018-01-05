@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   Text,
   TextInput,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 
 import {
@@ -33,8 +34,15 @@ import {
 import Icon from 'react-native-vector-icons/FontAwesome';
 import StarRating from 'react-native-star-rating';
 
+import SplashScreen from 'react-native-splash-screen';
+
 const width = Dimensions.get('window').width;
 const height = Dimensions.get('window').height;
+
+const topSize = Platform.select({
+  ios: height/3,
+  android: height/4 + 30,
+});
 
 export default class Home extends Component {
 
@@ -48,6 +56,12 @@ export default class Home extends Component {
       category: CATEGORIES[0],
       comments: ''
     };
+  }
+
+  componentDidMount() {
+    setTimeout(()=>{
+      SplashScreen.hide();
+    }, 5000)
   }
 
   onStarRatingPress(rating) {
@@ -84,11 +98,17 @@ export default class Home extends Component {
       return false
     }
 
-    if (category == '') {
+    if (starColor == 0) {
+      Alert.alert(
+        'Please select on the star button to rate our service.'
+      )
       return false
     }
 
-    if (starColor == 0) {
+    if (category == '') {
+      Alert.alert(
+        'Please select which category you want to feedback.'
+      )
       return false
     }
 
@@ -129,6 +149,10 @@ export default class Home extends Component {
     });
   }
 
+  scrollDown(){
+    console.log('hello');
+  }
+
   render() {
     return (
       <Container style={styles.container}>
@@ -141,6 +165,16 @@ export default class Home extends Component {
                 <View>
                   <Text style={styles.title}>Mäd</Text>
                   <Text style={styles.subtitle}>(Awesome) Service</Text>
+                </View>
+                <View style={styles.buttonScrollWrapper}>
+                  <Button
+                    block
+                    onPress={()=>this.scrollDown()}
+                    style={styles.buttonScroll}
+                  >
+                    <Image source={require('../assets/images/scroll-down.gif')} style={{width: 50, height: 50}}/>
+                    <Text style={styles.buttonScrollText}>Click this to Scroll</Text>
+                  </Button>
                 </View>
             </ImageBackground>
             <View style={styles.logoContainer}>
@@ -193,7 +227,7 @@ export default class Home extends Component {
                   allowFontScaling={ false }
                   onSelection={ this.setSelectedCategory.bind(this) }
                   selectedOption={ this.state.category }
-                  optionStyle={{fontFamily: PRIMARY_FONT}}
+                  optionStyle={{fontFamily: PRIMARY_FONT, fontSize: 11}}
                   optionContainerStyle={{flex: 1, justifyContent: 'space-around'}}
                 />
               </View>
@@ -229,7 +263,7 @@ export default class Home extends Component {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1
+    flex: 1,
   },
   overlay: {
     position: 'absolute',
@@ -244,7 +278,7 @@ const styles = StyleSheet.create({
     width: width,
     height: height,
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
   },
   logoContainer: {
     padding: 30,
@@ -275,13 +309,17 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     backgroundColor: 'transparent'
   },
-  heading: {
+  buttonScroll: {
+    backgroundColor: 'transparent',
+    alignSelf: 'flex-end',
+    top: topSize
+  },
+  buttonScrollText: {
+    padding: 10,
+    color: '#fff',
+    fontSize: 20,
     fontFamily: PRIMARY_FONT,
-    fontWeight: 'bold',
-    fontSize: 30,
-    color: '#111',
-    textAlign: 'center',
-    backgroundColor: 'transparent'
+    textAlign: 'center'
   },
   formContainer: {
     paddingLeft: 10,
@@ -327,7 +365,7 @@ const styles = StyleSheet.create({
     paddingLeft: 20,
     paddingTop: 30,
     paddingRight: 20,
-    paddingBottom: 0
+    paddingBottom: 5
   },
   button: {
     backgroundColor: PRIMARY_COLOR
