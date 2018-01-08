@@ -1,22 +1,22 @@
 import React, { Component } from 'react';
 import {
+  ActivityIndicator,
   View,
   StyleSheet,
   Image,
   Dimensions,
-  ScrollView,
   ImageBackground,
   TouchableOpacity,
   Text,
   TextInput,
   Alert,
-  Platform
+  Platform,
+  Keyboard
 } from 'react-native';
 
 import {
   Container,
   Content,
-  H3,
   Button
 } from 'native-base';
 
@@ -33,7 +33,6 @@ import {
 
 import Icon from 'react-native-vector-icons/FontAwesome';
 import StarRating from 'react-native-star-rating';
-
 import SplashScreen from 'react-native-splash-screen';
 
 const width = Dimensions.get('window').width;
@@ -54,14 +53,29 @@ export default class Home extends Component {
       userType: '',
       starCount: 0,
       category: CATEGORIES[0],
-      comments: ''
+      comments: '',
+      isSubmitting: false,
     };
+  }
+
+  componentWillMount () {
+    this.keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', this._keyboardDidHide.bind(this));
+  }
+
+  componentWillUnmount () {
+    this.keyboardDidHideListener.remove();
+  }
+
+  _keyboardDidHide () {
+    if(Platform.OS == 'ios'){
+      this.scrollDown();
+    }
   }
 
   componentDidMount() {
     setTimeout(()=>{
       SplashScreen.hide();
-    }, 5000)
+    }, 1000)
   }
 
   onStarRatingPress(rating) {
@@ -90,7 +104,7 @@ export default class Home extends Component {
   }
 
   isValidated(){
-    const { userType, category, starColor } = this.state;
+    const { userType, category, starCount } = this.state;
     if (userType == '') {
       Alert.alert(
         'Please select who you are.'
@@ -98,7 +112,7 @@ export default class Home extends Component {
       return false
     }
 
-    if (starColor == 0) {
+    if (starCount == 0) {
       Alert.alert(
         'Please select on the star button to rate our service.'
       )
@@ -111,150 +125,178 @@ export default class Home extends Component {
       )
       return false
     }
-
-    return true
+    return true;
   }
 
   handleSubmitted(){
-    if (!this.isValidated()) {
-      return;
-    }
-    const url = BASE_URL + '/feedbacks';
-    const { userType, category, starCount, comments } = this.state;
-    const feedback = {
-      user_type: userType,
-      category: category,
-      rating: starCount,
-      comments: comments
-    };
-    fetch(url, {
-      method: 'POST',
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(feedback: feedback)
-    })
-    .then((response) => {
-      if (response.status >= 200 && response.status < 300) {
-        const { navigation } = this.props;
-        navigation.navigate('ThankYou');
-      } else {
-        Alert.alert('Error')
+    this.setState({isSubmitting: true}, ()=>{
+      if (this.isValidated()) {
+        const url = BASE_URL + '/feedbacks';
+        const { userType, category, starCount, comments } = this.state;
+        const feedback = {
+          user_type: userType,
+          category: category,
+          rating: starCount,
+          comments: comments
+        };
+        fetch(url, {
+          method: 'POST',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(feedback: feedback)
+        })
+        .then((response) => {
+          if (response.status >= 200 && response.status < 300) {
+            const { navigation } = this.props;
+            navigation.navigate('ThankYou');
+          } else {
+
+            Alert.alert('Error')
+          }
+        })
+        .catch((error) => {
+          Alert.alert('Error')
+
+          console.error(error);
+        })
+        .done(()=>{
+            this.setState({isSubmitting: false})
+        });
+      }else{
+        this.setState({isSubmitting: false})
       }
     })
-    .catch((error) => {
-      Alert.alert('Error')
-      console.error(error);
-    });
+
   }
 
   scrollDown(){
-    console.log('hello');
+    const { formView, scrollView } = this.refs;
+    scrollView._root.scrollToPosition(0, this.state.formOffset);
+  }
+
+  handleFormLayout(event){
+    const { height, width, x, y } = event.nativeEvent.layout
+    this.setState({formHeight: height, formOffset: y})
   }
 
   render() {
     return (
       <Container style={styles.container}>
-        <Content>
-          <ScrollView>
-            <ImageBackground
-                source={require('../assets/images/background.jpg')}
-                style={styles.imagebackground}>
-                <View style={styles.overlay}/>
-                <View>
-                  <Text style={styles.title}>Mäd</Text>
-                  <Text style={styles.subtitle}>(Awesome) Service</Text>
-                </View>
-                <View style={styles.buttonScrollWrapper}>
-                  <Button
-                    block
-                    onPress={()=>this.scrollDown()}
-                    style={styles.buttonScroll}
-                  >
-                    <Image source={require('../assets/images/scroll-down.gif')} style={{width: 50, height: 50}}/>
-                    <Text style={styles.buttonScrollText}>Click this to Scroll</Text>
-                  </Button>
-                </View>
-            </ImageBackground>
-            <View style={styles.logoContainer}>
-              <Image source={require('../assets/images/logo.png')} style={styles.logoImage}/>
+        <Content ref='scrollView'
+          enableResetScrollToCoords={false}
+        >
+
+          <ImageBackground
+              source={require('../assets/images/background.jpg')}
+              style={styles.imagebackground}>
+              <View style={styles.overlay}/>
               <View>
-                <Text>
-                  Tell us about your experience with our service
-                </Text>
+                <Text style={styles.title}>Mäd</Text>
+                <Text style={styles.subtitle}>(Awesome) Service</Text>
               </View>
-            </View>
-            <View style={styles.formContainer}>
-              <Text style={styles.formTitle}>Feedback Form</Text>
-              <Grid>
-                <Row>
-                  <Col>
-                    <TouchableOpacity onPress={()=>this.setUserTypeSelection('Client')}>
-                      <View style={ styles.iconWrapper }>
-                        <Icon name='user-circle' size={65} color={this.changeColorIcon('Client')} style={styles.iconSmall}/>
-                        <Text style={[styles.iconTitle, {color: this.changeColorIcon('Client')}]}>I am a Client</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </Col>
-                  <Col>
-                    <TouchableOpacity onPress={()=>this.setUserTypeSelection('Employee')}>
-                      <View style={ styles.iconWrapper }>
-                        <Icon name='user-circle' size={65} color={this.changeColorIcon('Employee')} style={styles.iconSmall}/>
-                        <Text style={[styles.iconTitle, {color: this.changeColorIcon('Employee')}]}>I am an Employee</Text>
-                      </View>
-                    </TouchableOpacity>
-                  </Col>
-                </Row>
-              </Grid>
-              <View style={styles.itemWrapper}>
-                <Text style={styles.labelItem}>How do you rate our service?</Text>
-                <StarRating
-                  disabled={false}
-                  maxStars={5}
-                  rating={this.state.starCount}
-                  selectedStar={(rating) => this.onStarRatingPress(rating)}
-                  starColor={PRIMARY_COLOR}
-                />
-              </View>
-              <View style={styles.itemWrapper}>
-                <Text style={styles.labelItem}>Choose Category</Text>
-                <SegmentedControls
-                  tint={PRIMARY_COLOR}
-                  selectedTint= {'white'}
-                  backTint= {'white'}
-                  options={ CATEGORIES }
-                  allowFontScaling={ false }
-                  onSelection={ this.setSelectedCategory.bind(this) }
-                  selectedOption={ this.state.category }
-                  optionStyle={{fontFamily: PRIMARY_FONT, fontSize: 11}}
-                  optionContainerStyle={{flex: 1, justifyContent: 'space-around'}}
-                />
-              </View>
-
-              <View style={styles.itemWrapper}>
-                <TextInput
-                  placeholder='Any Other Suggestions?'
-                  value={ this.state.comments }
-                  multiline={ true }
-                  style={ styles.commentsInput }
-                  numberOfLines={4}
-                  underlineColorAndroid='transparent'
-                  onChangeText={ this.setComments.bind(this) }
-                />
-              </View>
-
-              <View style={styles.buttonWrapper}>
+              <View style={styles.buttonScrollWrapper}>
                 <Button
                   block
-                  style={styles.button}
-                  onPress={ this.handleSubmitted.bind(this) }
+                  onPress={()=>this.scrollDown()}
+                  style={styles.buttonScroll}
                 >
-                  <Text style={styles.buttonText}>Submit</Text>
+                  <Image source={require('../assets/images/scroll-down.gif')} style={{width: 50, height: 50}}/>
+                  <Text style={styles.buttonScrollText}>Click this to Scroll</Text>
                 </Button>
               </View>
+          </ImageBackground>
+          { this.state.isSubmitting ? (
+            <View style={{height: this.state.formHeight, flex: 1, justifyContent: 'center', alignItems: 'center'}}>
+              <ActivityIndicator size="large" color={PRIMARY_COLOR} />
+              <Text>Loading ...</Text>
             </View>
-          </ScrollView>
+            ) : (
+              <View ref='formView' onLayout={this.handleFormLayout.bind(this)}>
+                <View style={styles.logoContainer}>
+                  <Image source={require('../assets/images/logo.png')} style={styles.logoImage}/>
+                  <View>
+                    <Text>
+                      Tell us about your experience with our service
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.formContainer}>
+                  <Text style={styles.formTitle}>Feedback Form</Text>
+                  <Grid>
+                    <Row>
+                      <Col>
+                        <TouchableOpacity onPress={()=>this.setUserTypeSelection('Client')}>
+                          <View style={ styles.iconWrapper }>
+                            <Icon name='user-circle' size={65} color={this.changeColorIcon('Client')} style={styles.iconSmall}/>
+                            <Text style={[styles.iconTitle, {color: this.changeColorIcon('Client')}]}>I am a Client</Text>
+                          </View>
+                        </TouchableOpacity>
+                      </Col>
+                      <Col>
+                        <TouchableOpacity onPress={()=>this.setUserTypeSelection('Employee')}>
+                          <View style={ styles.iconWrapper }>
+                            <Icon name='user-circle' size={65} color={this.changeColorIcon('Employee')} style={styles.iconSmall}/>
+                            <Text style={[styles.iconTitle, {color: this.changeColorIcon('Employee')}]}>I am an Employee</Text>
+                          </View>
+                        </TouchableOpacity>
+                      </Col>
+                    </Row>
+                  </Grid>
+                  <View style={styles.itemWrapper}>
+                    <Text style={styles.labelItem}>How do you rate our service?</Text>
+                    <StarRating
+                      disabled={false}
+                      maxStars={5}
+                      rating={this.state.starCount}
+                      selectedStar={(rating) => this.onStarRatingPress(rating)}
+                      starColor={PRIMARY_COLOR}
+                    />
+                  </View>
+                  <View style={styles.itemWrapper}>
+                    <Text style={styles.labelItem}>Choose Category</Text>
+                    <SegmentedControls
+                      tint={PRIMARY_COLOR}
+                      selectedTint= {'white'}
+                      backTint= {'white'}
+                      options={ CATEGORIES }
+                      allowFontScaling={ false }
+                      onSelection={ this.setSelectedCategory.bind(this) }
+                      selectedOption={ this.state.category }
+                      optionStyle={{fontFamily: PRIMARY_FONT, fontSize: 11}}
+                      optionContainerStyle={{flex: 1, justifyContent: 'space-around'}}
+                    />
+                  </View>
+
+                  <View style={styles.itemWrapper}>
+                    <TextInput
+                      ref='comments'
+                      placeholder='Any Other Suggestions?'
+                      value={ this.state.comments }
+                      multiline={ true }
+                      style={ styles.commentsInput }
+                      numberOfLines={4}
+                      underlineColorAndroid='transparent'
+                      blurOnSubmit={true}
+                      onChangeText={ this.setComments.bind(this) }
+                    />
+                  </View>
+
+                  <View style={styles.buttonWrapper}>
+                    <Button
+                      block
+                      style={styles.button}
+                      onPress={ this.handleSubmitted.bind(this) }
+                    >
+                      <Text style={styles.buttonText}>Submit</Text>
+                    </Button>
+                  </View>
+                </View>
+              </View>
+            )
+          }
+
         </Content>
       </Container>
     )
