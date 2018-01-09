@@ -271,14 +271,13 @@ export default class Home extends Component {
 
                   <View style={styles.itemWrapper}>
                     <TextInput
+                      multiline={ true }
                       ref='comments'
                       placeholder='Any Other Suggestions?'
                       value={ this.state.comments }
-                      multiline={ true }
                       style={ styles.commentsInput }
                       numberOfLines={4}
                       underlineColorAndroid='transparent'
-                      blurOnSubmit={true}
                       onChangeText={ this.setComments.bind(this) }
                     />
                   </View>
